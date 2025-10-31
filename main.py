@@ -71,6 +71,12 @@ class SymParser:
 	def parse(self):
 		exploded = [t for t in self.eq.split() if t]
 		print(exploded)
+
+		if len(exploded)==0:
+			raise ValueError(f"no terms resolvable to tree")
+		elif len(exploded)==1:
+			print(f"length of resolved tree is 1, are you sure this is not redundant?")
+		
 		tree = self.parse_expression(exploded)
 		return tree
 	
@@ -164,13 +170,6 @@ class SymSolver:
 	def add_equation(self,var,expr):
 		parser = SymParser(expr)
 		tree = parser.parse()
-		if len(tree)==0:
-			raise ValueError(f"no terms resolvable to tree")
-		elif len(tree)==1:
-			print(f"length of resolved tree is 1, are you sure this is not redundant?")
-			if isinstance(tree[0], (int, float)):
-				print(f"constant term defined as equation. define as value with set_var_value.")
-
 		self.eqns[var] = tree	
 		
 	def set_var_value(self, var, val):
