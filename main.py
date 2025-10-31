@@ -1,4 +1,6 @@
 import re
+import math
+
 
 class SymParser:
 	def __init__(self, eq):
@@ -70,15 +72,15 @@ class SymParser:
 		exploded = [t for t in self.eq.split() if t]
 		print(exploded)
 		tree = self.parse_expression(exploded)
-		print(tree)
-		
-		
-		
-		
-		
+		return tree
+	
+	
+	
+	
+	
 	# helpers
 	def __groupWords(self):
-		words = ['sin', 'cos', 'tan', 'log', 'ln', 'sqrt', 'pi', 'e', 'theta']
+		words = ['sin', 'cos', 'tan', 'arcsin', 'arccos', 'arctan', 'sec', 'cosec', 'cot', 'log', 'ln', 'sqrt', 'pi', 'e', 'theta']
 		for f in words:
 			self.eq = re.sub(f, f' {f} ', self.eq)
 	
@@ -125,10 +127,132 @@ class Node:
 		# value
 		else:
 			return str(self.value)
+
+
+
+
+
+
+class SymSolver:
+	def __init__(self):
+		self.eqns = {}
+		self.values = {}
+		self.words = {
+			# trig
+			'sin': math.sin,
+			'cos': math.cos,
+			'tan': math.tan,
+			'arcsin': math.asin,
+			'arccos': math.acos,
+			'arctan': math.atan,
+			'sec': lambda x: 1 / math.cos(x),
+			'cosec': lambda x: 1 / math.sin(x),
+			'cot': lambda x: 1 / math.tan(x),
+			
+			# logs
+			'log': math.log10,
+			'ln': math.log,
+			'sqrt': math.sqrt,
+			
+			# constants
+			'pi': math.pi,
+			'e': math.e
+		}
 		
+		self._evaluating = set()
+		
+	def add_equation(self,var,expr):
+		parser = SymParser(expr)
+		tree = parser.parse()
+		if len(tree)==0:
+			raise ValueError(f"no terms resolvable to tree")
+		elif len(tree)==1:
+			print(f"length of resolved tree is 1, are you sure this is not redundant?")
+			if isinstance(tree[0], (int, float)):
+				print(f"constant term defined as equation. define as value with set_var_value.")
+
+		self.eqns[var] = tree	
+		
+	def set_var_value(self, var, val):
+		self.values[var] = val
+		
+	def evaluate(self, var):
+		print("Attempting to solve for", var, "...")
+		if var in self._evaluating:
+			raise ValueError(f"cannot proceed, circular dependency: {var} defined as result of function with argument {var}")
+
+		if var in self.values:
+			return self.values[var]
+		elif var in self.eqns:
+			self._evaluating.add(var)
+			res=self.__evaluateNode(self.eqns[var])
+			self._evaluating.remove(var)
+			self.values[var]=res
+			return res
+		else:
+			print(f"ERROR: no expression available for {var}")
+			
 	
+	def __evaluateNode(self, node):
+		# operands
+		if node.value in ['+', '-', '*', '/', '^']:
+			left = self.__evaluateNode(node.left)
+			right = self.__evaluateNode(node.right)
+			return self.__applyOp(node.value, left, right)
 		
-eq = "x^2 + y^2 - log(x) - cos[sin(y)] + 8x + 6y"
-parser = SymParser(eq)
-parser.printEq()
-parser.parse()
+		# predefined constant
+		elif node.value in self.words and isinstance(self.words[node.value], (int, float)):
+			return self.words[node.value]
+		
+		# unary function
+		elif node.value in self.words and callable(self.words[node.value]):
+			arg = self.__evaluateNode(node.left)
+			return self.words[node.value](arg)
+		
+		# straight numbers
+		elif isinstance(node.value, (int, float)):
+			return node.value
+		
+		# previously known or computed variables
+		elif node.value in self.values:
+			return self.values[node.value]
+		
+		# evaluate other equations
+		elif node.value in self.eqns:
+			return self.evaluate(node.value)
+
+		# good luck
+		else:
+			raise ValueError(f"unknown variable {node.value}")
+	
+	
+	def __applyOp(self, op, left, right):
+		if op == '+': return left + right
+		if op == '-': return left - right
+		if op == '*': return left * right
+		if op == '/': return left / right
+		if op == '^': return left ** right
+
+
+
+
+#eq = "x^2 + y^2 - log(x) - cos[sin(y)] + (8x/6y)"
+#parser = SymParser(eq)
+#parser.printEq()
+#t = parser.parse()
+#print(t)
+
+solver = SymSolver()
+
+#solver.add_equation('x', "x^2 + y^2 - log(x) - cos[sin(y)] + (8x/6y)")
+#print(solver.evaluate('x'))
+
+
+solver.add_equation('x', "y^2+2*y*z+4*a*b*z")
+solver.add_equation('z', "(sin(y))^2")
+solver.add_equation('y', "sin(1-sqrt(2))")
+
+solver.add_equation('a', "12")
+solver.add_equation('b', "27")
+
+print("Resolved value for x:", solver.evaluate('x'))
