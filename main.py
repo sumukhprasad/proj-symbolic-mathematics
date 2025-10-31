@@ -177,6 +177,8 @@ class SymSolver:
 		
 	def evaluate(self, var):
 		print("Attempting to solve for", var, "...")
+		
+		# very good luck
 		if var in self._evaluating:
 			raise ValueError(f"cannot proceed, circular dependency: {var} defined as result of function with argument {var}")
 
@@ -225,12 +227,28 @@ class SymSolver:
 			raise ValueError(f"unknown variable {node.value}")
 	
 	
+	
+	def provide_graph_values(self, evar, vvar, vary, step):
+		inp = vary[0]
+		gvalues = []
+		while inp<vary[1]:
+			self.values[vvar]=inp
+			res=solver.evaluate(evar)
+			gvalues.append((inp,res))
+			inp+=step
+		
+		return gvalues
+			
+			
+	
+	
 	def __applyOp(self, op, left, right):
 		if op == '+': return left + right
 		if op == '-': return left - right
 		if op == '*': return left * right
 		if op == '/': return left / right
 		if op == '^': return left ** right
+
 
 
 
@@ -247,6 +265,7 @@ solver = SymSolver()
 #print(solver.evaluate('x'))
 
 
+'''
 solver.add_equation('x', "y^2+2*y*z+4*a*b*z")
 solver.add_equation('z', "(sin(y))^2")
 solver.add_equation('y', "sin(1-sqrt(2))")
@@ -255,3 +274,12 @@ solver.add_equation('a', "12")
 solver.add_equation('b', "27")
 
 print("Resolved value for x:", solver.evaluate('x'))
+'''
+
+solver.add_equation('x', "y^2+2*y*z+4*a*b*z")
+solver.add_equation('z', "(sin(y))^2")
+
+solver.add_equation('a', "12")
+solver.add_equation('b', "27")
+
+print("Resolved values for x over [-1,1] with step 0.1:", solver.provide_graph_values('x', 'y', [-1,1], 0.1))
