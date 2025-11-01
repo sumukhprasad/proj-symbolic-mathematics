@@ -74,7 +74,6 @@ class SymREPL(tk.Tk):
 	
 			try:
 				data = self.solver.provide_graph_values(evar, vvar, (start, end), step)
-				self.__write(str(data))
 			except Exception as e:
 				self.__write(f"plot error: {e}", color="#f00")
 				return
