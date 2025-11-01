@@ -178,7 +178,7 @@ class SymSolver:
 	def set_var_value(self, var, val):
 		self.values[var] = val
 		
-	def evaluate(self, var):
+	def evaluate(self, var, nocache=[]):
 		print("Attempting to solve for", var, "...")
 		
 		# very good luck
@@ -192,7 +192,8 @@ class SymSolver:
 			self._evaluating.add(var)
 			res=self.__evaluateNode(self.eqns[var])
 			self._evaluating.remove(var)
-			self.values[var]=res
+			if var not in nocache:
+				self.values[var]=res
 			return res
 		else:
 			print(f"ERROR: no expression available for {var}")
@@ -238,13 +239,13 @@ class SymSolver:
 		gvalues = []
 		while inp<vary[1]:
 			self.values[vvar]=inp
-			res=self.evaluate(evar)
+			res=self.evaluate(evar,nocache=evar)
 			gvalues.append((inp,res))
 			inp+=step
 		
 		return gvalues
-			
-			
+
+
 	
 	
 	def __applyOp(self, op, left, right):
