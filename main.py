@@ -86,9 +86,10 @@ class SymParser:
 	
 	# helpers
 	def __groupWords(self):
-		words = ['sin', 'cos', 'tan', 'arcsin', 'arccos', 'arctan', 'sec', 'cosec', 'cot', 'log', 'ln', 'sqrt', 'pi', 'e', 'theta']
-		for f in words:
-			self.eq = re.sub(f, f' {f} ', self.eq)
+	    words = ['arcsin', 'arccos', 'arctan', 'cosec', 'sin', 'cos', 'tan', 'sec', 'cot', 'log', 'ln', 'sqrt', 'pi', 'e', 'theta']
+	    words.sort(key=len, reverse=True)
+	    for f in words:
+	        self.eq = re.sub(rf'\b{f}\b', f' {f} ', self.eq)
 	
 	def __groupOperators(self):
 		ops = ['(', ')', '^', '/', '*', '+', '-']
@@ -277,7 +278,7 @@ print("Resolved value for x:", solver.evaluate('x'))
 '''
 
 solver.add_equation('x', "y^2+2*y*z+4*a*b*z")
-solver.add_equation('z', "(sin(y))^2")
+solver.add_equation('z', "(arccos(y))^2")
 
 solver.add_equation('a', "12")
 solver.add_equation('b', "27")
